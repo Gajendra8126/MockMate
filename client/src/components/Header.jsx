@@ -27,7 +27,7 @@ const Header = ({ isDarkMode, toggleDarkMode }) => {
         <div className="bg-brand-500 p-1.5 rounded-lg">
           <Database className="w-6 h-6 text-white" />
         </div>
-        <span className="text-xl font-bold tracking-tight">Mockmate</span>
+        <span className="text-xl font-bold tracking-tight">MockMate</span>
       </Link>
       <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
         <Link to="/features" className="hover:text-[var(--color-foreground)] transition-colors">Features</Link>
@@ -47,7 +47,7 @@ const Header = ({ isDarkMode, toggleDarkMode }) => {
           )}
         </button>
         <a 
-          href="https://github.com" 
+          href="https://github.com/harshsingh7718/MockMate" 
           target="_blank" 
           rel="noopener noreferrer"
           className="p-2 rounded-lg bg-[var(--color-card)] hover:bg-[var(--color-card-hover)] border border-[var(--color-border)] transition-colors cursor-pointer"

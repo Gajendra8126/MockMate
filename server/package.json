@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "nodemon --ignore input_schemas/ --ignore output_data/ server.js",
     "cli": "node src/index.js"
   },
   "keywords": [],

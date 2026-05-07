@@ -1,45 +1,114 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { FileCode, FileJson, X, Terminal, Maximize2, Minimize2, CheckCircle2, ChevronRight, Download, Plus } from 'lucide-react';
-
-// Mock data for the generated files
-const initialFiles = [
-  { id: '1', name: 'schema.prisma', type: 'prisma', content: 'generator client {\n  provider = "prisma-client-js"\n}\n\ndatasource db {\n  provider = "postgresql"\n  url      = env("DATABASE_URL")\n}\n\nmodel User {\n  id    Int     @id @default(autoincrement())\n  email String  @unique\n  name  String?\n  posts Post[]\n}\n\nmodel Post {\n  id        Int     @id @default(autoincrement())\n  title     String\n  content   String?\n  published Boolean @default(false)\n  author    User    @relation(fields: [authorId], references: [id])\n  authorId  Int\n}' },
-  { id: '2', name: 'mock_users.json', type: 'json', content: '[\n  {\n    "id": 1,\n    "email": "alice@example.com",\n    "name": "Alice Smith"\n  },\n  {\n    "id": 2,\n    "email": "bob@example.com",\n    "name": "Bob Jones"\n  }\n]' },
-  { id: '3', name: 'mock_posts.json', type: 'json', content: '[\n  {\n    "id": 101,\n    "title": "Getting Started with Mockmate",\n    "content": "This is a great tool for generating data.",\n    "published": true,\n    "authorId": 1\n  }\n]' }
-];
-
-const initialInputFiles = [
-  { id: 'in1', name: 'product_schema.js', type: 'js', content: 'export const productSchema = {\n  type: "object",\n  properties: {\n    id: { type: "integer" },\n    name: { type: "string" },\n    price: { type: "number" }\n  }\n};' },
-  { id: 'in2', name: 'user_profile_template.js', type: 'js', content: 'export const userProfileTemplate = {\n  profile: {\n    username: "{{name.firstName}}",\n    age: "{{datatype.number({min: 18, max: 65})}}"\n  }\n};' }
-];
-
-const mockLogs = [
-  '[INFO] Initializing Mockmate engine...',
-  '[INFO] Parsing schema files...',
-  '[SUCCESS] Successfully parsed schema.prisma (2 models found)',
-  '[INFO] Resolving relationships (User 1-to-many Post)...',
-  '[INFO] Generating mock data for User (Target: 100 rows)...',
-  '[INFO] Generating mock data for Post (Target: 500 rows)...',
-  '[SUCCESS] Mock data generated successfully in 1.42s.',
-  '[INFO] Preparing output files for download...'
-];
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+import { FileCode, FileJson, X, Terminal, Maximize2, Minimize2, Download, ChevronRight, RefreshCw } from 'lucide-react';
 
 const Output = () => {
   const { id } = useParams();
-  const [files, setFiles] = useState(initialFiles);
-  const [inputFiles, setInputFiles] = useState(initialInputFiles);
-  const [activeFileId, setActiveFileId] = useState(initialFiles[0]?.id || null);
-  const [openTabs, setOpenTabs] = useState([initialFiles[0]?.id].filter(Boolean));
+  const location = useLocation();
+  const { useMongo, mongoUri } = location.state || {};
+
+  const [files, setFiles] = useState([]);
+  const [inputFiles, setInputFiles] = useState([]);
+  const [logs, setLogs] = useState([]);
+
+  const [activeFileId, setActiveFileId] = useState(null);
+  const [openTabs, setOpenTabs] = useState([]);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
 
+  // Pipeline Status States
+  const [isProcessing, setIsProcessing] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const hasStarted = useRef(false);
+  const terminalRef = useRef(null);
+
+  // 1. Manage the Terminal Stream (Runs once on mount)
+  useEffect(() => {
+    const sse = new EventSource('http://localhost:4000/api/stream');
+
+    sse.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setLogs((prev) => [...prev, data.text]);
+      if (terminalRef.current) {
+        terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      }
+    };
+
+    sse.onerror = () => {
+      setLogs((prev) => [...prev, "⚠️ Lost connection to MockMate Engine."]);
+    };
+
+    return () => sse.close();
+  }, []);
+
+  // 2. The Core Execution Engine (Extracted so we can retry it)
+  const executePipeline = async () => {
+    setIsProcessing(true);
+    setHasError(false);
+    setLogs((prev) => [...prev, "🔄 Initializing generation pipeline..."]);
+
+    try {
+      // Step A: Load Inputs
+      const inputRes = await fetch('http://localhost:4000/api/files?type=input');
+      const inputData = await inputRes.json();
+      setInputFiles(inputData.files.map((f, i) => ({
+        id: `in${i}`, name: f.filename, type: 'js', content: f.content
+      })));
+
+      // Step B: Trigger AI Engine
+      const buildRes = await fetch('http://localhost:4000/api/build-mock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 10 })
+      });
+
+      if (!buildRes.ok) throw new Error("Pipeline Failed. The AI might have timed out.");
+
+      // Step C: Load Outputs
+      const outRes = await fetch('http://localhost:4000/api/files?type=output');
+      const outData = await outRes.json();
+      const formattedOutputs = outData.files.map((f, i) => ({
+        id: `out${i}`, name: f.filename, type: 'json', content: f.content
+      }));
+      setFiles(formattedOutputs);
+
+      // Step D: Open RuleBook
+      const rulebook = formattedOutputs.find(f => f.name === 'RuleBook.json');
+      if (rulebook) openFile(rulebook.id);
+
+      // Step E: Seed MongoDB
+      if (useMongo && mongoUri) {
+        await fetch('http://localhost:4000/api/seed-db', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mongoUri })
+        });
+      }
+
+    } catch (error) {
+      setHasError(true);
+      setLogs((prev) => [...prev, `❌ Critical Error: ${error.message}`]);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 3. Auto-start the pipeline on page load
+  useEffect(() => {
+    if (!hasStarted.current) {
+      hasStarted.current = true;
+      // Slight delay to ensure terminal connects before we spam it with logs
+      setTimeout(() => executePipeline(), 1000);
+    }
+  }, [useMongo, mongoUri]);
+
+
+  // --- UI Helper Functions ---
   const activeFile = files.find(f => f.id === activeFileId) || inputFiles.find(f => f.id === activeFileId);
 
   const openFile = (fileId) => {
-    if (!openTabs.includes(fileId)) {
-      setOpenTabs([...openTabs, fileId]);
-    }
+    if (!openTabs.includes(fileId)) setOpenTabs([...openTabs, fileId]);
     setActiveFileId(fileId);
   };
 
@@ -52,29 +121,9 @@ const Output = () => {
     }
   };
 
-  const closeFile = (e, fileId) => {
-    e.stopPropagation();
-    const newFiles = files.filter(f => f.id !== fileId);
-    setFiles(newFiles);
-    closeTab(e, fileId);
-  };
-
-  const closeInputFile = (e, fileId) => {
-    e.stopPropagation();
-    const newFiles = inputFiles.filter(f => f.id !== fileId);
-    setInputFiles(newFiles);
-    closeTab(e, fileId);
-  };
-
-  const toggleTerminal = () => {
-    setIsTerminalExpanded(!isTerminalExpanded);
-    if (!isTerminalExpanded) setIsEditorExpanded(false);
-  };
-
-  const toggleEditor = () => {
-    setIsEditorExpanded(!isEditorExpanded);
-    if (!isEditorExpanded) setIsTerminalExpanded(false);
-  };
+  const handleDownloadZip = () => window.open('http://localhost:4000/api/download', '_blank');
+  const toggleTerminal = () => { setIsTerminalExpanded(!isTerminalExpanded); if (!isTerminalExpanded) setIsEditorExpanded(false); };
+  const toggleEditor = () => { setIsEditorExpanded(!isEditorExpanded); if (!isEditorExpanded) setIsTerminalExpanded(false); };
 
   return (
     <main className="max-w-8xl mx-auto px-4 md:px-6 pt-24 pb-8 min-h-[calc(100vh-100px)] relative z-10 transition-colors duration-300">
@@ -85,7 +134,7 @@ const Output = () => {
         
         {/* Left Sidebar - File Explorer */}
         <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 relative z-20 h-full">
-          
+
           {/* Input Schemas Section */}
           <div className="flex-1 min-h-[150px] flex flex-col bg-[#1a1f2e] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
             <div className="px-4 py-3 border-b border-gray-800 bg-[#1e2333] flex justify-between items-center">
@@ -96,10 +145,10 @@ const Output = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-2">
               {inputFiles.length === 0 ? (
-                <p className="text-sm text-gray-500 p-4 text-center">No input schemas.</p>
+                <p className="text-sm text-gray-500 p-4 text-center">Loading schemas...</p>
               ) : (
                 inputFiles.map(file => (
-                  <div 
+                  <div
                     key={file.id}
                     onClick={() => openFile(file.id)}
                     className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm mb-1 transition-colors group
@@ -107,7 +156,7 @@ const Output = () => {
                     `}
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
-                      {file.type === 'json' ? <FileJson className="w-4 h-4 flex-shrink-0 opacity-70" /> : <FileCode className="w-4 h-4 flex-shrink-0 opacity-70" />}
+                      <FileCode className="w-4 h-4 flex-shrink-0 opacity-70" />
                       <span className="truncate">{file.name}</span>
                     </div>
                     <button 
@@ -132,10 +181,12 @@ const Output = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-2">
               {files.length === 0 ? (
-                <p className="text-sm text-gray-500 p-4 text-center">No files remaining.</p>
+                <p className={`text-sm p-4 text-center ${hasError ? 'text-red-400/70' : 'text-gray-500'}`}>
+                  {hasError ? "Failed to generate." : isProcessing ? "Generating..." : "No files generated."}
+                </p>
               ) : (
                 files.map(file => (
-                  <div 
+                  <div
                     key={file.id}
                     onClick={() => openFile(file.id)}
                     className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm mb-1 transition-colors group
@@ -143,7 +194,7 @@ const Output = () => {
                     `}
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
-                      {file.type === 'json' ? <FileJson className="w-4 h-4 flex-shrink-0 opacity-70" /> : <FileCode className="w-4 h-4 flex-shrink-0 opacity-70" />}
+                      <FileJson className="w-4 h-4 flex-shrink-0 opacity-70 text-yellow-400" />
                       <span className="truncate">{file.name}</span>
                     </div>
                     <button 
@@ -162,7 +213,7 @@ const Output = () => {
 
         {/* Right Side - File Viewer & Terminal */}
         <div className="flex-1 flex flex-col gap-6 overflow-hidden relative">
-          
+
           {/* File Viewer */}
           <div className={`bg-[#1e1e1e] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-lg flex-col transition-all duration-300
             ${isEditorExpanded ? 'absolute inset-0 z-30 h-full' : 'flex-1 min-h-[300px]'}
@@ -170,7 +221,6 @@ const Output = () => {
           `}>
             {/* Editor Header Row */}
             <div className="flex items-center justify-between bg-[#252526] border-b border-[#3c3c3c]">
-              {/* Editor Tabs */}
               <div className="flex items-center overflow-x-auto flex-nowrap flex-1">
                 {openTabs.length > 0 ? (
                   openTabs.map(tabId => {
@@ -178,7 +228,7 @@ const Output = () => {
                     if (!tabFile) return null;
                     const isActive = activeFileId === tabId;
                     return (
-                      <div 
+                      <div
                         key={tabId}
                         onClick={() => setActiveFileId(tabId)}
                         className={`flex items-center gap-2 px-3 py-2 min-w-[120px] max-w-[200px] cursor-pointer border-r border-[#3c3c3c] group transition-colors
@@ -187,7 +237,7 @@ const Output = () => {
                       >
                         {tabFile.type === 'json' ? <FileJson className="w-4 h-4 text-yellow-400 opacity-80 flex-shrink-0" /> : <FileCode className="w-4 h-4 text-blue-400 opacity-80 flex-shrink-0" />}
                         <span className={`text-sm truncate select-none flex-1 ${isActive ? 'text-gray-200' : 'text-gray-400'}`}>{tabFile.name}</span>
-                        <button 
+                        <button
                           onClick={(e) => closeTab(e, tabId)}
                           className={`p-0.5 rounded-md hover:bg-[#4c4c4c] transition-colors ml-1 flex-shrink-0
                             ${isActive ? 'opacity-100 text-gray-400 hover:text-white' : 'opacity-0 group-hover:opacity-100 text-gray-500'}
@@ -202,77 +252,76 @@ const Output = () => {
                   <div className="px-4 py-2 text-sm text-gray-500 italic select-none">No files open</div>
                 )}
               </div>
-              
-              {/* Action Buttons */}
+
               <div className="flex items-center px-2">
-                <button 
+                <button
                   onClick={toggleEditor}
                   className="text-gray-400 hover:text-white transition-colors p-1.5 rounded hover:bg-white/10 flex-shrink-0"
-                  title={isEditorExpanded ? "Minimize Editor" : "Maximize Editor"}
                 >
                   {isEditorExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4 cursor-pointer" />}
                 </button>
               </div>
             </div>
-              
-              {/* Editor Content */}
-              <div className="flex-1 overflow-auto p-4 relative">
-                {activeFile ? (
-                  <pre className="font-mono text-sm text-gray-300">
-                    <code>{activeFile.content}</code>
-                  </pre>
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
-                    <FileCode className="w-12 h-12 mb-4 opacity-20" />
-                    <p>Select a file to view its contents</p>
-                  </div>
-                )}
-              </div>
+
+            {/* Editor Content */}
+            <div className="flex-1 overflow-auto p-4 relative">
+              {activeFile ? (
+                <pre className="font-mono text-sm text-gray-300">
+                  <code>{activeFile.content}</code>
+                </pre>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
+                  <FileCode className="w-12 h-12 mb-4 opacity-20" />
+                  <p>Select a file to view its contents</p>
+                </div>
+              )}
             </div>
+          </div>
 
           {/* Terminal */}
           <div className={`bg-[#0d1117] border border-[var(--color-border)] rounded-xl flex-col overflow-hidden shadow-lg transition-all duration-300
-            ${isTerminalExpanded ? 'absolute inset-0 z-30 h-full' : 'h-64 flex-shrink-0'}
+            ${isTerminalExpanded ? 'absolute inset-0 z-30 h-full' : 'h-45 flex-shrink-0'}
             ${isEditorExpanded ? 'hidden' : 'flex'}
           `}>
-            {/* Terminal Header */}
             <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-[#30363d]">
               <div className="flex items-center gap-2 text-gray-400">
                 <Terminal className="w-4 h-4" />
                 <span className="text-xs font-semibold uppercase tracking-wider">Output Console</span>
               </div>
-              <button 
+              <button
                 onClick={toggleTerminal}
                 className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
-                title={isTerminalExpanded ? "Minimize Terminal" : "Maximize Terminal"}
               >
                 {isTerminalExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4 cursor-pointer" />}
               </button>
             </div>
-            
-            {/* Terminal Body */}
-            <div className="flex-1 p-4 font-mono text-sm overflow-y-auto">
-              {mockLogs.map((log, i) => (
-                <div key={i} className="mb-1 flex">
-                  <span className="text-gray-600 mr-4 select-none flex-shrink-0">
-                    {new Date().toISOString().substring(11, 19)}
-                  </span>
-                  <span className={`
-                    ${log.includes('[SUCCESS]') ? 'text-green-400' : ''}
-                    ${log.includes('[INFO]') ? 'text-blue-400' : ''}
-                    ${!log.includes('[') ? 'text-gray-300' : ''}
-                  `}>
-                    {log}
-                  </span>
+
+            <div ref={terminalRef} className="flex-1 p-4 font-mono text-sm overflow-y-auto">
+              {logs.map((log, i) => {
+                let colorClass = "text-gray-300";
+                if (log.includes('✅') || log.includes('🟢')) colorClass = "text-green-400";
+                if (log.includes('❌') || log.includes('⚠️')) colorClass = "text-red-400";
+                if (log.includes('🧠') || log.includes('🚀')) colorClass = "text-blue-400";
+                if (log.includes('⏳') || log.includes('🔄')) colorClass = "text-yellow-400";
+
+                return (
+                  <div key={i} className="mb-1 flex">
+                    <span className="text-gray-600 mr-4 select-none flex-shrink-0">
+                      {new Date().toISOString().substring(11, 19)}
+                    </span>
+                    <span className={colorClass}>{log}</span>
+                  </div>
+                );
+              })}
+              {isProcessing && (
+                <div className="mt-4 flex items-center text-gray-400 animate-pulse">
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="w-2 h-4 bg-gray-400 ml-1"></span>
                 </div>
-              ))}
-              <div className="mt-4 flex items-center text-gray-400 animate-pulse">
-                <ChevronRight className="w-4 h-4" />
-                <span className="w-2 h-4 bg-gray-400 ml-1"></span>
-              </div>
+              )}
             </div>
           </div>
-          
+
         </div>
       </div>
     </main>

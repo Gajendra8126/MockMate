@@ -7,13 +7,13 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-2">
           <Database className="w-5 h-5 text-brand-500" />
-          <span className="font-semibold">Mockmate</span>
+          <span className="font-semibold">MockMate</span>
         </div>
         <p className="text-sm text-gray-500">
-          Mockmate By Tech Crafters ❤️
+          MockMate By Tech Crafters ❤️
         </p>
         <p className="text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} Mockmate. All rights reserved.
+          &copy; {new Date().getFullYear()} MockMate. All rights reserved.
         </p>
       </div>
     </footer>
