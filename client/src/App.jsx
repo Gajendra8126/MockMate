@@ -5,6 +5,9 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Output from './pages/Output';
 import Features from './pages/Features';
+import Documentation from './pages/Documentation';
+import Blog from './pages/Blog';
+
 
 function App() {
   // Default is dark mode
@@ -36,6 +39,9 @@ function App() {
         <Route path="/results/:id" element={<Output />} />
         <Route path="/features" element={<Features />} />
         <Route path="/features/:featureId" element={<Features />} />
+           <Route path="/documentation" element={<Documentation />} />
+           <Route path="/blog" element={<Blog />} />
+       
       </Routes>
       
       <Footer />
