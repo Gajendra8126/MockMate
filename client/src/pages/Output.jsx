@@ -5,7 +5,7 @@ import { FileCode, FileJson, X, Terminal, Maximize2, Minimize2, Download, Chevro
 const Output = () => {
   const { id } = useParams();
   const location = useLocation();
-  const { useMongo, mongoUri } = location.state || {};
+  const { useMongo, mongoUri, mockRows } = location.state || {};
 
   const [files, setFiles] = useState([]);
   const [inputFiles, setInputFiles] = useState([]);
@@ -60,7 +60,7 @@ const Output = () => {
       const buildRes = await fetch('http://localhost:4000/api/build-mock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count: 10 })
+        body: JSON.stringify({ count: Number(mockRows) || 10 })
       });
 
       if (!buildRes.ok) throw new Error("Pipeline Failed. The AI might have timed out.");
