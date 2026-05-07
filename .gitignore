@@ -7,6 +7,5 @@ output_data
 input_schemas/
 
 test.js
-server.js
 
 files
