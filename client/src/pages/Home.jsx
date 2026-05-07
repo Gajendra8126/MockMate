@@ -1,10 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { File, X, Sparkles, ChevronRight } from 'lucide-react';
+import { File, X, Sparkles, ChevronRight, Loader2 } from 'lucide-react';
 
 const Home = () => {
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
+
+  // NEW: State for MongoDB config and Loading UI
+  const [useMongo, setUseMongo] = useState(false);
+  const [mongoUri, setMongoUri] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -20,7 +26,7 @@ const Home = () => {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const newFiles = Array.from(e.dataTransfer.files);
       setFiles((prev) => [...prev, ...newFiles]);
@@ -42,9 +48,50 @@ const Home = () => {
     fileInputRef.current?.click();
   };
 
-  const handleContinue = () => {
-    // In a real app, we'd upload files and get an ID. Here we mock it:
-    navigate('/results/mock-data-123');
+  // NEW: Integrated Backend Upload Logic
+  const handleContinue = async () => {
+    if (files.length === 0) {
+      alert("Please upload at least one schema file.");
+      return;
+    }
+
+    if (useMongo && !mongoUri.trim()) {
+      alert("Please enter a valid MongoDB URI, or uncheck the MongoDB option.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // 1. Package the files for the backend
+      const formData = new FormData();
+      files.forEach((file) => formData.append('schemas', file));
+
+      // 2. Send to our Express /api/upload endpoint
+      const response = await fetch('http://localhost:4000/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      // 3. Navigate to the editor screen, passing the Mongo config along!
+      // This way, the next screen knows whether to show the "Seed" button
+      navigate('/results/studio', {
+        state: {
+          useMongo,
+          mongoUri
+        }
+      });
+
+    } catch (error) {
+      console.error(error);
+      alert("Failed to upload files. Is your backend server running on port 4000?");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -61,22 +108,27 @@ const Home = () => {
           </span>
         </h1>
         <p className="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-          Upload your schema files, and Mockmate will automatically understand relationships and generate realistic, interconnected data sets for your development needs.
+          Upload your schema files, and MockMate will automatically understand relationships and generate realistic, interconnected data sets for your development needs.
         </p>
       </div>
 
       {/* Upload Section */}
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-end mb-4">
-          <button 
+          <button
             onClick={handleContinue}
-            className="bg-blue-300 hover:bg-blue-400 text-blue-900 font-semibold px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            disabled={isUploading || files.length === 0}
+            className="bg-blue-300 hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-blue-900 font-semibold px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
           >
-            Continue <ChevronRight className="w-5 h-5" />
+            {isUploading ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Uploading...</>
+            ) : (
+              <>Continue <ChevronRight className="w-5 h-5" /></>
+            )}
           </button>
         </div>
 
-        <div 
+        <div
           className={`border border-dashed rounded-xl p-12 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer mb-6 relative
             ${isDragging ? 'border-blue-400 bg-blue-500/5' : 'border-gray-500 hover:border-blue-400 hover:bg-white/5'}
           `}
@@ -96,13 +148,13 @@ const Home = () => {
           <p className="text-gray-400">
             Drag and drop files here or click to <span className="text-blue-400 border-b border-dashed border-blue-400 pb-0.5">input from explorer</span>
           </p>
-          <input 
-            type="file" 
+          <input
+            type="file"
             ref={fileInputRef}
             onChange={handleFileSelect}
-            className="hidden" 
+            className="hidden"
             accept=".js"
-            multiple 
+            multiple
           />
         </div>
 
@@ -110,21 +162,35 @@ const Home = () => {
         <div className="border border-gray-700 bg-gray-800/30 rounded-xl p-6">
           <label className="flex items-start gap-4 cursor-pointer">
             <div className="pt-1">
-              <input type="checkbox" className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900" />
+              {/* NEW: Controlled Checkbox */}
+              <input
+                type="checkbox"
+                checked={useMongo}
+                onChange={(e) => setUseMongo(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900"
+              />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-white mb-1">Do you wanna insert the generated data in MongoDB</h3>
-              <p className="text-sm text-gray-400 mb-4">Configure connection to automatically sync generated mock data.</p>
-              <input 
-                type="text" 
+              <h3 className="text-lg font-semibold text-white mb-1">Do you wanna insert the generated data in your MongoDB</h3>
+              <p className="text-sm text-gray-400 mb-4">Configure connection to automatically sync generated mock data in your DB.</p>
+
+              {/* NEW: Controlled Text Input (Only editable if checkbox is true) */}
+              <input
+                type="text"
+                value={mongoUri}
+                onChange={(e) => setMongoUri(e.target.value)}
+                disabled={!useMongo}
                 placeholder="MongoDB URI ( mongodb+srv://............ )"
-                className="w-full bg-white text-gray-900 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                className={`w-full rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${useMongo
+                    ? 'bg-white text-gray-900 placeholder-gray-400'
+                    : 'bg-gray-700 text-gray-500 placeholder-gray-600 cursor-not-allowed'
+                  }`}
               />
             </div>
           </label>
         </div>
 
-        {/* File List Area (Optional but kept for feedback) */}
+        {/* File List Area */}
         {files.length > 0 && (
           <div className="mt-8">
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">
@@ -132,8 +198,8 @@ const Home = () => {
             </h3>
             <div className="space-y-3">
               {files.map((file, index) => (
-                <div 
-                  key={`${file.name}-${index}`} 
+                <div
+                  key={`${file.name}-${index}`}
                   className="flex items-center justify-between p-4 rounded-xl bg-[var(--color-card)] border border-[var(--color-border)] hover:border-brand-500/30 transition-colors group"
                 >
                   <div className="flex items-center gap-4">
@@ -149,7 +215,7 @@ const Home = () => {
                       </p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       removeFile(index);

@@ -24,7 +24,9 @@ export async function bulkInsertToDatabase(dynamicMongoUri) {
         await mongoose.connect(dynamicMongoUri);
         streamLog(`✅ Connected to MongoDB!`);
 
-        const files = fs.readdirSync(outputDir).filter(f => f.endsWith('.json'));
+        const files = fs.readdirSync(outputDir).filter(f =>
+            f.endsWith('.json') && f !== 'RuleBook.json'
+        );
 
         for (const file of files) {
             const collectionName = file.replace('.json', '').replace('.model', '');
