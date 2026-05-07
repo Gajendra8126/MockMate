@@ -127,27 +127,21 @@ const Output = () => {
 
   return (
     <main className="max-w-8xl mx-auto px-4 md:px-6 pt-24 pb-8 min-h-[calc(100vh-100px)] relative z-10 transition-colors duration-300">
-      <div className="flex flex-col lg:flex-row gap-6 h-[85vh]">
+      
+  
 
-        {/* Left Sidebar */}
+      <div className="flex flex-col lg:flex-row gap-6 h-[85vh]">
+        
+        {/* Left Sidebar - File Explorer */}
         <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 relative z-20 h-full">
 
           {/* Input Schemas Section */}
           <div className="flex-1 min-h-[150px] flex flex-col bg-[#1a1f2e] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
             <div className="px-4 py-3 border-b border-gray-800 bg-[#1e2333] flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xs font-semibold text-gray-300">Input_Schemas</h2>
-                {/* 🚀 THE NEW RETRY BUTTON */}
-                {hasError && (
-                  <button
-                    onClick={executePipeline}
-                    className="flex items-center gap-1 bg-red-500/20 text-red-400 hover:bg-red-500/40 px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors"
-                    title="Retry Pipeline"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Retry
-                  </button>
-                )}
-              </div>
+              <h2 className="text-xs font-semibold text-gray-300">Input_Schemas</h2>
+              <button className="text-gray-400 hover:text-white transition-colors">
+                
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
               {inputFiles.length === 0 ? (
@@ -165,6 +159,12 @@ const Output = () => {
                       <FileCode className="w-4 h-4 flex-shrink-0 opacity-70" />
                       <span className="truncate">{file.name}</span>
                     </div>
+                    <button 
+                      onClick={(e) => closeInputFile(e, file.id)}
+                      className={`p-1 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors ${activeFileId === file.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    >
+                      <X className="w-3 h-3 cursor-pointer" />
+                    </button>
                   </div>
                 ))
               )}
@@ -175,13 +175,8 @@ const Output = () => {
           <div className="flex-1 min-h-[150px] flex flex-col bg-[#1a1f2e] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
             <div className="px-4 py-3 border-b border-gray-800 bg-[#1e2333] flex justify-between items-center">
               <h2 className="text-xs font-semibold text-gray-300">Generated_Data</h2>
-              <button
-                onClick={handleDownloadZip}
-                disabled={isProcessing || hasError}
-                className="text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Download ZIP"
-              >
-                <Download className="w-4 h-4" />
+              <button className="text-gray-400 hover:text-white transition-colors" title="Download Data">
+                <Download className="w-4 h-4 cursor-pointer" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
@@ -202,6 +197,12 @@ const Output = () => {
                       <FileJson className="w-4 h-4 flex-shrink-0 opacity-70 text-yellow-400" />
                       <span className="truncate">{file.name}</span>
                     </div>
+                    <button 
+                      onClick={(e) => closeFile(e, file.id)}
+                      className={`p-1 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors ${activeFileId === file.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    >
+                      <X className="w-3 h-3 cursor-pointer" />
+                    </button>
                   </div>
                 ))
               )}
@@ -242,7 +243,7 @@ const Output = () => {
                             ${isActive ? 'opacity-100 text-gray-400 hover:text-white' : 'opacity-0 group-hover:opacity-100 text-gray-500'}
                           `}
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3.5 h-3.5 cursor-pointer" />
                         </button>
                       </div>
                     );
@@ -257,7 +258,7 @@ const Output = () => {
                   onClick={toggleEditor}
                   className="text-gray-400 hover:text-white transition-colors p-1.5 rounded hover:bg-white/10 flex-shrink-0"
                 >
-                  {isEditorExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  {isEditorExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4 cursor-pointer" />}
                 </button>
               </div>
             </div>
@@ -291,7 +292,7 @@ const Output = () => {
                 onClick={toggleTerminal}
                 className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
               >
-                {isTerminalExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isTerminalExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4 cursor-pointer" />}
               </button>
             </div>
 

@@ -31,13 +31,13 @@ const Header = ({ isDarkMode, toggleDarkMode }) => {
       </Link>
       <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
         <Link to="/features" className="hover:text-[var(--color-foreground)] transition-colors">Features</Link>
-        <a href="#" className="hover:text-[var(--color-foreground)] transition-colors">Documentation</a>
-        {/* <a href="#" className="hover:text-[var(--color-foreground)] transition-colors">Blog</a> */}
+        <Link to="/documentation" className="hover:text-[var(--color-foreground)] transition-colors">Documentation</Link>
+        <Link to="/blog" className="hover:text-[var(--color-foreground)] transition-colors">Blog</Link>
       </div>
       <div className="flex items-center gap-4">
         <button 
           onClick={toggleDarkMode}
-          className="p-2 rounded-lg bg-[var(--color-card)] hover:bg-[var(--color-card-hover)] border border-[var(--color-border)] transition-colors"
+          className="p-2 rounded-lg bg-[var(--color-card)] hover:bg-[var(--color-card-hover)] border border-[var(--color-border)] transition-colors cursor-pointer"
           aria-label="Toggle Dark Mode"
         >
           {isDarkMode ? (
@@ -50,7 +50,7 @@ const Header = ({ isDarkMode, toggleDarkMode }) => {
           href="https://github.com/harshsingh7718/MockMate" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="p-2 rounded-lg bg-[var(--color-card)] hover:bg-[var(--color-card-hover)] border border-[var(--color-border)] transition-colors"
+          className="p-2 rounded-lg bg-[var(--color-card)] hover:bg-[var(--color-card-hover)] border border-[var(--color-border)] transition-colors cursor-pointer"
           aria-label="GitHub Repository"
         >
           <GithubIcon className="w-5 h-5 text-gray-400 hover:text-[var(--color-foreground)]" />
