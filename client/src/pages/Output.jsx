@@ -79,23 +79,9 @@ const Output = () => {
   return (
     <main className="max-w-8xl mx-auto px-4 md:px-6 pt-24 pb-8 min-h-[calc(100vh-100px)] relative z-10 transition-colors duration-300">
       
-      {/* Header Info */}
-      {/* <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            Generation Results
-            <span className="bg-green-500/10 text-green-500 text-xs px-2 py-1 rounded-full border border-green-500/20 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Complete
-            </span>
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Project ID: {id}</p>
-        </div>
-        <button className="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm shadow-lg shadow-brand-500/20">
-          <Download className="w-4 h-4" /> Download All
-        </button>
-      </div> */}
+  
 
-      <div className="flex flex-col lg:flex-row gap-6 h-[100vh]">
+      <div className="flex flex-col lg:flex-row gap-6 h-[85vh]">
         
         {/* Left Sidebar - File Explorer */}
         <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 relative z-20 h-full">
@@ -105,7 +91,7 @@ const Output = () => {
             <div className="px-4 py-3 border-b border-gray-800 bg-[#1e2333] flex justify-between items-center">
               <h2 className="text-xs font-semibold text-gray-300">Input_Schemas</h2>
               <button className="text-gray-400 hover:text-white transition-colors">
-                <Plus className="w-4 h-4" />
+                
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
@@ -128,7 +114,7 @@ const Output = () => {
                       onClick={(e) => closeInputFile(e, file.id)}
                       className={`p-1 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors ${activeFileId === file.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3 h-3 cursor-pointer" />
                     </button>
                   </div>
                 ))
@@ -141,7 +127,7 @@ const Output = () => {
             <div className="px-4 py-3 border-b border-gray-800 bg-[#1e2333] flex justify-between items-center">
               <h2 className="text-xs font-semibold text-gray-300">Generated_Data</h2>
               <button className="text-gray-400 hover:text-white transition-colors" title="Download Data">
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 cursor-pointer" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
@@ -164,7 +150,7 @@ const Output = () => {
                       onClick={(e) => closeFile(e, file.id)}
                       className={`p-1 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors ${activeFileId === file.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3 h-3 cursor-pointer" />
                     </button>
                   </div>
                 ))
@@ -207,7 +193,7 @@ const Output = () => {
                             ${isActive ? 'opacity-100 text-gray-400 hover:text-white' : 'opacity-0 group-hover:opacity-100 text-gray-500'}
                           `}
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3.5 h-3.5 cursor-pointer" />
                         </button>
                       </div>
                     );
@@ -224,7 +210,7 @@ const Output = () => {
                   className="text-gray-400 hover:text-white transition-colors p-1.5 rounded hover:bg-white/10 flex-shrink-0"
                   title={isEditorExpanded ? "Minimize Editor" : "Maximize Editor"}
                 >
-                  {isEditorExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  {isEditorExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4 cursor-pointer" />}
                 </button>
               </div>
             </div>
@@ -260,7 +246,7 @@ const Output = () => {
                 className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
                 title={isTerminalExpanded ? "Minimize Terminal" : "Maximize Terminal"}
               >
-                {isTerminalExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isTerminalExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4 cursor-pointer" />}
               </button>
             </div>
             

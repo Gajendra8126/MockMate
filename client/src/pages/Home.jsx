@@ -51,18 +51,17 @@ const Home = () => {
     <main className="max-w-6xl mx-auto px-6 pt-28 pb-16 relative z-10 transition-colors duration-300">
       <div className="text-center mb-16 space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 text-brand-500 dark:text-brand-300 text-sm font-medium border border-brand-500/20">
-          <Sparkles className="w-4 h-4" />
-          <span>AI-Driven Relational Mock Data Generation</span>
+         <span class="w-2 h-2 rounded-full bg-pink-500"></span>
+          <span>Mockmate Engine v2.0 Live</span>
         </div>
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
           Generate Mock Data <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-blue-500 dark:from-brand-400 dark:to-blue-400">
-            At Lightning Speed
+           with Mockmate
           </span>
         </h1>
         <p className="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-          Upload your schema files, and Mockmate will automatically understand relationships and generate realistic, interconnected data sets for your development needs.
-        </p>
+            Design complex database schemas visually, define relationships, and let our deterministic AI engine populate millions of rows of production-grade, coherent mock data instantly.</p>
       </div>
 
       {/* Upload Section */}
@@ -70,7 +69,7 @@ const Home = () => {
         <div className="flex justify-end mb-4">
           <button 
             onClick={handleContinue}
-            className="bg-blue-300 hover:bg-blue-400 text-blue-900 font-semibold px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            className="bg-blue-300 hover:bg-blue-400 text-blue-900 font-semibold px-6 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
           >
             Continue <ChevronRight className="w-5 h-5" />
           </button>
