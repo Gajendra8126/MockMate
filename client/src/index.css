@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  
+  /* Brand colors matching the AI-data generator vibe */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1; /* Indigo primary */
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+  --color-brand-950: #1e1b4b;
+
+  --color-background: var(--bg-color);
+  --color-foreground: var(--fg-color);
+  --color-card: var(--card-bg);
+  --color-card-hover: var(--card-hover-bg);
+  --color-border: var(--border-color);
+  --color-nav-bg: var(--nav-bg);
+}
+
+:root {
+  /* Default Dark Mode */
+  --bg-color: #0f111a;
+  --fg-color: #f8fafc;
+  --card-bg: #1e2133;
+  --card-hover-bg: #262a40;
+  --border-color: #333a54;
+  --nav-bg: rgba(30, 33, 51, 0.6);
+}
+
+:root.light {
+  /* Light Mode */
+  --bg-color: #f8fafc;
+  --fg-color: #0f111a;
+  --card-bg: #ffffff;
+  --card-hover-bg: #f1f5f9;
+  --border-color: #e2e8f0;
+  --nav-bg: rgba(255, 255, 255, 0.6);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+/* Custom glowing effects */
+@layer utilities {
+  .glow-effect {
+    box-shadow: 0 0 20px 2px rgba(99, 102, 241, 0.3);
+  }
+  .glow-effect:hover {
+    box-shadow: 0 0 30px 5px rgba(99, 102, 241, 0.5);
+  }
+  .glassmorphism {
+    background: var(--color-nav-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--color-border);
+  }
+}
+
+/* Hide scrollbars globally */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
