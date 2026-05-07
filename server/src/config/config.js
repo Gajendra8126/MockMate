@@ -16,7 +16,7 @@ const config = {
     gemini: {
         apiKey: process.env.GEMINI_API_KEY,
     },
-    openRouter: {
+    openrouter: {
         apiKey: process.env.OPENROUTER_API_KEY,
     },
 
