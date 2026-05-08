@@ -138,10 +138,18 @@ const Output = () => {
           {/* Input Schemas Section */}
           <div className="flex-1 min-h-[150px] flex flex-col bg-[#1a1f2e] border border-gray-800 rounded-xl overflow-hidden shadow-lg">
             <div className="px-4 py-3 border-b border-gray-800 bg-[#1e2333] flex justify-between items-center">
-              <h2 className="text-xs font-semibold text-gray-300">Input_Schemas</h2>
-              <button className="text-gray-400 hover:text-white transition-colors">
-                
-              </button>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xs font-semibold text-gray-300">Input_Schemas</h2>
+                {hasError && (
+                  <button 
+                    onClick={executePipeline}
+                    className="flex items-center gap-1 bg-red-500/20 text-red-400 hover:bg-red-500/40 px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                    title="Retry Pipeline"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Retry
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
               {inputFiles.length === 0 ? (
